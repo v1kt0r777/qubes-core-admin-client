@@ -19,6 +19,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 import io
+import os
 import unittest.mock
 
 import subprocess
@@ -34,6 +35,10 @@ class TC_00_qvm_run(qubesadmin.tests.QubesTestCase):
                 sys.stderr is not sys.__stderr__:
             self.skipTest('qvm-run change behavior on redirected stdout/stderr')
         super(TC_00_qvm_run, self).setUp()
+
+    def default_filter_esc(self):
+        return os.isatty(sys.stdout.fileno())
+
     def test_000_run_single(self):
         self.app.expected_calls[
             ('dom0', 'admin.vm.List', None, None)] = \
@@ -47,7 +52,7 @@ class TC_00_qvm_run(qubesadmin.tests.QubesTestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(self.app.service_calls, [
             ('test-vm', 'qubes.VMShell', {
-                'filter_esc': True,
+                'filter_esc': self.default_filter_esc(),
                 'localcmd': None,
                 'stdout': subprocess.DEVNULL,
                 'stderr': subprocess.DEVNULL,
@@ -71,7 +76,7 @@ class TC_00_qvm_run(qubesadmin.tests.QubesTestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(self.app.service_calls, [
             ('test-vm', 'qubes.VMShell', {
-                'filter_esc': True,
+                'filter_esc': self.default_filter_esc(),
                 'localcmd': None,
                 'stdout': subprocess.DEVNULL,
                 'stderr': subprocess.DEVNULL,
@@ -79,7 +84,7 @@ class TC_00_qvm_run(qubesadmin.tests.QubesTestCase):
             }),
             ('test-vm', 'qubes.VMShell', b'command; exit\n'),
             ('test-vm2', 'qubes.VMShell', {
-                'filter_esc': True,
+                'filter_esc': self.default_filter_esc(),
                 'localcmd': None,
                 'stdout': subprocess.DEVNULL,
                 'stderr': subprocess.DEVNULL,
@@ -105,7 +110,7 @@ class TC_00_qvm_run(qubesadmin.tests.QubesTestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(self.app.service_calls, [
             ('test-vm', 'qubes.VMShell', {
-                'filter_esc': True,
+                'filter_esc': self.default_filter_esc(),
                 'localcmd': None,
                 'stdout': None,
                 'stderr': None,
@@ -133,7 +138,7 @@ class TC_00_qvm_run(qubesadmin.tests.QubesTestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(self.app.service_calls, [
             ('test-vm', 'qubes.VMShell', {
-                'filter_esc': True,
+                'filter_esc': self.default_filter_esc(),
                 'localcmd': None,
                 'stdout': None,
                 'stderr': None,
@@ -164,7 +169,7 @@ class TC_00_qvm_run(qubesadmin.tests.QubesTestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(self.app.service_calls, [
             ('test-vm', 'qubes.VMShell', {
-                'filter_esc': True,
+                'filter_esc': self.default_filter_esc(),
                 'localcmd': None,
                 'stdout': None,
                 'stderr': None,
@@ -221,7 +226,7 @@ class TC_00_qvm_run(qubesadmin.tests.QubesTestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(self.app.service_calls, [
             ('test-vm', 'qubes.VMShell', {
-                'filter_esc': True,
+                'filter_esc': self.default_filter_esc(),
                 'localcmd': 'local-command',
                 'stdout': None,
                 'stderr': None,
@@ -253,7 +258,7 @@ class TC_00_qvm_run(qubesadmin.tests.QubesTestCase):
             }),
             ('test-vm', 'qubes.WaitForSession', b'user'),
             ('test-vm', 'qubes.VMShell', {
-                'filter_esc': True,
+                'filter_esc': self.default_filter_esc(),
                 'localcmd': None,
                 'stdout': subprocess.DEVNULL,
                 'stderr': subprocess.DEVNULL,
@@ -285,7 +290,7 @@ class TC_00_qvm_run(qubesadmin.tests.QubesTestCase):
             }),
             ('test-vm', 'qubes.WaitForSession', b'user'),
             ('test-vm', 'service.name', {
-                'filter_esc': True,
+                'filter_esc': self.default_filter_esc(),
                 'localcmd': None,
                 'stdout': subprocess.DEVNULL,
                 'stderr': subprocess.DEVNULL,
