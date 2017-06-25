@@ -78,4 +78,80 @@ class TC_00_qvm_shutdown(qubesadmin.tests.QubesTestCase):
 
     def test_010_wait(self):
         '''test --wait option'''
-        self.skipTest('test not implemented')
+        self.app.expected_calls[
+            ('some-vm', 'admin.vm.Shutdown', None, None)] = \
+            b'0\x00'
+        self.app.expected_calls[
+            ('dom0', 'admin.vm.List', None, None)] = \
+            b'0\x00some-vm class=AppVM state=Running\n'
+        self.app.expected_calls[
+            ('some-vm', 'admin.vm.property.Get', 'netvm', None)] = \
+            b'0\x00default=False type=vm '
+        self.app.expected_calls[
+            ('some-vm', 'admin.vm.List', None, None)] = \
+            [b'0\x00some-vm class=AppVM state=Running\n'] + \
+            [b'0\x00some-vm class=AppVM state=Halted\n'] * 2
+        qubesadmin.tools.qvm_shutdown.main(['--wait', 'some-vm'], app=self.app)
+        self.assertAllCalled()
+
+    def test_011_wait_unknown_netvm(self):
+        '''test --wait option'''
+        self.app.expected_calls[
+            ('some-vm', 'admin.vm.Shutdown', None, None)] = \
+            b'0\x00'
+        self.app.expected_calls[
+            ('dom0', 'admin.vm.List', None, None)] = \
+            b'0\x00some-vm class=AppVM state=Running\n'
+        self.app.expected_calls[
+            ('some-vm', 'admin.vm.property.Get', 'netvm', None)] = \
+            b'0\x00default=False type=vm sys-net'
+        self.app.expected_calls[
+            ('some-vm', 'admin.vm.List', None, None)] = \
+            [b'0\x00some-vm class=AppVM state=Running\n'] + \
+            [b'0\x00some-vm class=AppVM state=Halted\n'] * 2
+        qubesadmin.tools.qvm_shutdown.main(['--wait', 'some-vm'], app=self.app)
+        self.assertAllCalled()
+
+    def test_012_wait_multiple(self):
+        '''test --wait option, with multiple VMs - including shutdown order'''
+        self.app.expected_calls[
+            ('some-vm', 'admin.vm.Shutdown', None, None)] = \
+            b'0\x00'
+        self.app.expected_calls[
+            ('other-vm', 'admin.vm.Shutdown', None, None)] = \
+            b'0\x00'
+        self.app.expected_calls[
+            ('sys-net', 'admin.vm.Shutdown', None, None)] = \
+            b'0\x00'
+        self.app.expected_calls[
+            ('dom0', 'admin.vm.List', None, None)] = \
+            b'0\x00' \
+            b'sys-net class=AppVM state=Running\n' \
+            b'some-vm class=AppVM state=Running\n' \
+            b'other-vm class=AppVM state=Running\n'
+        self.app.expected_calls[
+            ('some-vm', 'admin.vm.property.Get', 'netvm', None)] = \
+            b'0\x00default=False type=vm sys-net'
+        self.app.expected_calls[
+            ('other-vm', 'admin.vm.property.Get', 'netvm', None)] = \
+            b'0\x00default=False type=vm '
+        self.app.expected_calls[
+            ('sys-net', 'admin.vm.property.Get', 'netvm', None)] = \
+            b'0\x00default=False type=vm '
+        self.app.expected_calls[
+            ('some-vm', 'admin.vm.List', None, None)] = \
+            [b'0\x00some-vm class=AppVM state=Running\n'] + \
+            [b'0\x00some-vm class=AppVM state=Halted\n'] * 2
+        self.app.expected_calls[
+            ('other-vm', 'admin.vm.List', None, None)] = \
+            [b'0\x00other-vm class=AppVM state=Running\n'] + \
+            [b'0\x00other-vm class=AppVM state=Halted\n'] * 2
+        self.app.expected_calls[
+            ('sys-net', 'admin.vm.List', None, None)] = \
+            [b'0\x00sys-net class=AppVM state=Running\n'] + \
+            [b'0\x00sys-net class=AppVM state=Halted\n'] * 2
+        qubesadmin.tools.qvm_shutdown.main(['--wait', '--all'], app=self.app)
+        self.assertAllCalled()
+        shutdown_order = [call_key[0] for call_key in self.app.actual_calls
+                          if call_key[1] == 'admin.vm.Shutdown']
+        self.assertEqual(shutdown_order, ['some-vm', 'other-vm', 'sys-net'])
